@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Invoice Processor</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:    #1a2e4a;
+      --navy2:   #0f1e30;
+      --blue:    #2563eb;
+      --blue-lt: #dbeafe;
+      --green:   #10b981;
+      --amber:   #f59e0b;
+      --red:     #ef4444;
+      --purple:  #7c3aed;
+      --gray-1:  #f8fafc;
+      --gray-2:  #e5e7eb;
+      --gray-5:  #6b7280;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--gray-1);
+      min-height: 100vh;
+      color: #1f2937;
+    }
+
+    /* HEADER */
+    header {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 100%);
+      padding: 30px 40px 26px;
+      box-shadow: 0 4px 28px rgba(0,0,0,0.22);
+    }
+    .header-inner {
+      max-width: 880px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+    .header-logo {
+      width: 54px; height: 54px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+    .header-text h1 {
+      font-family: 'DM Serif Display', serif;
+      color: white;
+      font-size: 24px;
+      line-height: 1.2;
+    }
+    .header-text p {
+      color: #93c5fd;
+      font-size: 13.5px;
+      margin-top: 3px;
+    }
+    .header-badge {
+      margin-left: auto;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #bfdbfe;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    /* MAIN */
+    main {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 32px 24px 80px;
+    }
+
+    /* BANNER */
+    .banner {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 13px 16px;
+      margin-bottom: 26px;
+      font-size: 13.5px;
+      color: #1e40af;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      line-height: 1.55;
+    }
+    .banner span { font-size: 17px; flex-shrink: 0; margin-top: 1px; }
+
+    /* DROP ZONE */
+    #dropzone {
+      border: 2px dashed #cbd5e1;
+      border-radius: 18px;
+      padding: 50px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: white;
+      margin-bottom: 28px;
+      position: relative;
+    }
+    #dropzone:hover, #dropzone.drag-over {
+      border-color: var(--blue);
+      background: #f0f7ff;
+    }
+    #dropzone.drag-over { transform: scale(1.015); }
+    .dz-icon { font-size: 54px; margin-bottom: 14px; display: block; }
+    .dz-title { font-size: 19px; font-weight: 700; color: #1f2937; margin-bottom: 7px; }
+    .dz-sub { color: var(--gray-5); font-size: 14px; }
+    .dz-sub em { color: var(--blue); font-style: normal; font-weight: 600; }
+    .dz-hint {
+      margin-top: 16px;
+      display: inline-flex;
+      gap: 8px;
+      background: #f1f5f9;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 12px;
+      color: #64748b;
+    }
+    #fileInput { display: none; }
+
+    /* STATS */
+    #stats {
+      display: none;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+    #stats.show { display: flex; }
+    .stat {
+      flex: 1;
+      min-width: 120px;
+      background: white;
+      border: 1px solid var(--gray-2);
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .stat-num { font-size: 22px; font-weight: 700; }
+    .stat-label { font-size: 12px; color: var(--gray-5); font-weight: 500; }
+
+    /* QUEUE */
+    .queue-header {
+      display: none;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .queue-header.show { display: flex; }
+    .queue-header h2 { font-size: 15px; font-weight: 700; color: #1f2937; }
+    .ss-link {
+      font-size: 13px; font-weight: 600;
+      color: var(--blue); text-decoration: none;
+      display: none;
+    }
+    .ss-link.show { display: inline; }
+
+    /* FILE CARD */
+    .card {
+      background: white;
+      border: 1px solid var(--gray-2);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin-bottom: 11px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      transition: box-shadow 0.2s;
+    }
+    .card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.07); }
+    .card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .card-left { display: flex; align-items: center; gap: 12px; }
+    .file-icon { font-size: 26px; }
+    .file-name { font-weight: 600; color: #1f2937; font-size: 14px; }
+    .file-size { font-size: 12px; color: #9ca3af; margin-top: 2px; }
+    .card-right { display: flex; align-items: center; gap: 8px; }
+
+    /* BADGES */
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 12px; border-radius: 20px;
+      font-size: 12px; font-weight: 600; border: 1px solid;
+      white-space: nowrap;
+    }
+    .b-waiting    { background:#f3f4f6; color:#6b7280; border-color:#e5e7eb; }
+    .b-extracting { background:#f5f3ff; color:#7c3aed; border-color:#ddd6fe; }
+    .b-pushing    { background:#fffbeb; color:#b45309; border-color:#fde68a; }
+    .b-done       { background:#ecfdf5; color:#059669; border-color:#a7f3d0; }
+    .b-error      { background:#fef2f2; color:#dc2626; border-color:#fca5a5; }
+
+    .retry-btn {
+      padding: 4px 12px; border-radius: 8px;
+      font-size: 12px; font-weight: 600;
+      background: #fee2e2; color: #dc2626;
+      border: 1px solid #fca5a5; cursor: pointer;
+    }
+    .retry-btn:hover { background: #fecaca; }
+
+    /* EXTRACTED DATA */
+    .extracted {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      font-size: 13px;
+    }
+    .ext-label {
+      font-weight: 700; color: #16a34a;
+      font-size: 11px; text-transform: uppercase;
+      letter-spacing: 0.07em; margin-bottom: 9px;
+    }
+    .ext-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 8px 16px;
+    }
+    .ext-field { display: flex; flex-direction: column; gap: 1px; }
+    .ext-key { font-size: 11px; color: var(--gray-5); font-weight: 600; }
+    .ext-val { color: #111827; font-weight: 500; }
+    .ext-empty { color: #9ca3af; font-style: italic; }
+
+    .error-box {
+      margin-top: 10px;
+      font-size: 12px; color: #dc2626;
+      background: #fef2f2; padding: 7px 11px;
+      border-radius: 7px; border: 1px solid #fecaca;
+    }
+
+    /* EMPTY STATE */
+    #empty {
+      text-align: center;
+      padding: 52px 0;
+      color: #9ca3af;
+    }
+    #empty .e-icon { font-size: 56px; margin-bottom: 14px; }
+    #empty p { font-size: 15px; line-height: 1.7; }
+
+    /* SPINNER */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { display: inline-block; animation: spin 1s linear infinite; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="header-logo">🏥</div>
+    <div class="header-text">
+      <h1>Invoice Intelligence Hub</h1>
+      <p>AI-powered extraction for locum tenens &amp; temporary staff invoices</p>
+    </div>
+    <div class="header-badge">📊 → Smartsheet</div>
+  </div>
+</header>
+
+<main>
+
+  <div class="banner">
+    <span>💡</span>
+    <div>
+      Upload any invoice — PDF or image — from <strong>any organization in any format</strong>.
+      AI will automatically extract the organization name, invoice number, invoice date,
+      amount due, and payment due date, then save each record to your
+      <strong>Smartsheet "Invoices"</strong> sheet instantly.
+    </div>
+  </div>
+
+  <!-- Drop zone -->
+  <div id="dropzone" onclick="document.getElementById('fileInput').click()">
+    <span class="dz-icon">📂</span>
+    <div class="dz-title">Drop invoice files here</div>
+    <div class="dz-sub">or <em>click to browse</em></div>
+    <div class="dz-hint">
+      <span>📄 PDF</span><span>·</span><span>🖼️ PNG / JPG</span>
+      <span>·</span><span>Any format, any provider</span>
+    </div>
+    <input id="fileInput" type="file" accept=".pdf,.png,.jpg,.jpeg" multiple/>
+  </div>
+
+  <!-- Stats bar -->
+  <div id="stats">
+    <div class="stat">
+      <span class="stat-num" id="s-total" style="color:#1f2937">0</span>
+      <span class="stat-label">Uploaded</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num" id="s-done" style="color:#059669">0</span>
+      <span class="stat-label">Saved to Smartsheet</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num" id="s-proc" style="color:#b45309">0</span>
+      <span class="stat-label">Processing</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num" id="s-err" style="color:#dc2626">0</span>
+      <span class="stat-label">Errors</span>
+    </div>
+  </div>
+
+  <!-- Queue header -->
+  <div class="queue-header" id="q-header">
+    <h2 id="q-title">Invoice Queue (0)</h2>
+    <a class="ss-link" id="ss-link" href="https://app.smartsheet.com" target="_blank">
+      📊 View in Smartsheet →
+    </a>
+  </div>
+
+  <!-- Queue -->
+  <div id="queue"></div>
+
+  <!-- Empty state -->
+  <div id="empty">
+    <div class="e-icon">🗂️</div>
+    <p>No invoices uploaded yet.<br/>Drop files above to get started.</p>
+  </div>
+
+</main>
+
+<script>
+  const dropzone  = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+  const queueEl   = document.getElementById('queue');
+  const emptyEl   = document.getElementById('empty');
+
+  let items = [];
+
+  // ── Drag & drop ──────────────────────────────────────────────────────────
+  dropzone.addEventListener('dragover',  e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+  dropzone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropzone.classList.remove('drag-over');
+    addFiles(e.dataTransfer.files);
+  });
+  fileInput.addEventListener('change', e => { addFiles(e.target.files); fileInput.value = ''; });
+
+  // ── Add files ────────────────────────────────────────────────────────────
+  function addFiles(files) {
+    const ok = ['application/pdf','image/png','image/jpeg','image/jpg'];
+    const valid = Array.from(files).filter(f => ok.includes(f.type));
+    if (!valid.length) return;
+
+    valid.forEach((file, i) => {
+      const id = `${Date.now()}-${Math.random()}`;
+      items.push({ id, file, status: 'waiting', extracted: null, error: null });
+      renderAll();
+      setTimeout(() => processFile(id), i * 350);
+    });
+  }
+
+  // ── Process ──────────────────────────────────────────────────────────────
+  async function processFile(id) {
+    setStatus(id, 'extracting');
+    const item = items.find(i => i.id === id);
+    try {
+      const fd = new FormData();
+      fd.append('invoice', item.file);
+
+      const resp = await fetch('/api/process-invoice', { method: 'POST', body: fd });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Server error');
+
+      setStatus(id, 'done', data.extracted);
+    } catch (err) {
+      setStatus(id, 'error', null, err.message);
+    }
+  }
+
+  function setStatus(id, status, extracted, error) {
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+    item.status = status;
+    if (extracted) item.extracted = extracted;
+    if (error)     item.error = error;
+    renderAll();
+  }
+
+  // ── Render ───────────────────────────────────────────────────────────────
+  function renderAll() {
+    const total = items.length;
+    const done  = items.filter(i => i.status === 'done').length;
+    const proc  = items.filter(i => !['done','error','waiting'].includes(i.status)).length;
+    const errs  = items.filter(i => i.status === 'error').length;
+
+    emptyEl.style.display = total ? 'none' : 'block';
+    document.getElementById('stats').classList.toggle('show', total > 0);
+    document.getElementById('q-header').classList.toggle('show', total > 0);
+    document.getElementById('ss-link').classList.toggle('show', done > 0);
+
+    document.getElementById('s-total').textContent = total;
+    document.getElementById('s-done').textContent  = done;
+    document.getElementById('s-proc').textContent  = proc;
+    document.getElementById('s-err').textContent   = errs;
+    document.getElementById('q-title').textContent = `Invoice Queue (${total})`;
+
+    queueEl.innerHTML = '';
+    items.slice().reverse().forEach(item => queueEl.appendChild(buildCard(item)));
+  }
+
+  function buildCard(item) {
+    const badges = {
+      waiting:    ['b-waiting',    '⏳', 'Waiting'],
+      extracting: ['b-extracting', '🤖', 'AI Extracting…'],
+      pushing:    ['b-pushing',    '📤', 'Saving…'],
+      done:       ['b-done',       '✅', 'Saved to Smartsheet'],
+      error:      ['b-error',      '❌', 'Error'],
+    };
+    const [cls, icon, label] = badges[item.status] || badges.waiting;
+    const sizeKB = (item.file.size / 1024).toFixed(1);
+
+    const retryBtn = item.status === 'error'
+      ? `<button class="retry-btn" onclick="retryItem('${item.id}')">Retry</button>` : '';
+
+    const extractedHtml = item.extracted ? `
+      <div class="extracted">
+        <div class="ext-label">✦ Extracted Data</div>
+        <div class="ext-grid">
+          ${ef('Organization', item.extracted.organizationName)}
+          ${ef('Invoice #',    item.extracted.invoiceNumber)}
+          ${ef('Invoice Date', item.extracted.dateOfInvoice)}
+          ${ef('Amount Due',   item.extracted.amountDue ? '$' + item.extracted.amountDue : '')}
+          ${ef('Payment Due',  item.extracted.paymentDueDate)}
+        </div>
+      </div>` : '';
+
+    const errorHtml = item.error
+      ? `<div class="error-box">⚠️ ${item.error}</div>` : '';
+
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.id = 'card-' + item.id;
+    div.innerHTML = `
+      <div class="card-top">
+        <div class="card-left">
+          <span class="file-icon">📄</span>
+          <div>
+            <div class="file-name">${item.file.name}</div>
+            <div class="file-size">${sizeKB} KB</div>
+          </div>
+        </div>
+        <div class="card-right">
+          <span class="badge ${cls}">${icon} ${label}</span>
+          ${retryBtn}
+        </div>
+      </div>
+      ${extractedHtml}
+      ${errorHtml}`;
+    return div;
+  }
+
+  function ef(key, val) {
+    return `<div class="ext-field">
+      <span class="ext-key">${key}</span>
+      <span class="ext-val ${val ? '' : 'ext-empty'}">${val || 'not found'}</span>
+    </div>`;
+  }
+
+  function retryItem(id) {
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+    item.status = 'waiting'; item.error = null; item.extracted = null;
+    renderAll();
+    processFile(id);
+  }
+</script>
+</body>
+</html>
