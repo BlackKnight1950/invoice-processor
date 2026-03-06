@@ -1,7 +1,7 @@
 {
-  "name": "invoice-processor",
+  "name": "pmoe-invoice-processor",
   "version": "1.0.0",
-  "description": "AI-powered invoice processor with Smartsheet integration",
+  "description": "PMOE AI-powered invoice processor with Smartsheet integration",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -10,6 +10,7 @@
     "@anthropic-ai/sdk": "^0.39.0",
     "axios": "^1.7.0",
     "express": "^4.18.2",
+    "form-data": "^4.0.0",
     "multer": "^1.4.5-lts.1"
   }
 }
