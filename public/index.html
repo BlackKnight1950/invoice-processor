@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Invoice Processor</title>
+  <title>PMOE Invoice Intelligence Hub</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -106,7 +106,6 @@
       transition: all 0.2s ease;
       background: white;
       margin-bottom: 28px;
-      position: relative;
     }
     #dropzone:hover, #dropzone.drag-over {
       border-color: var(--blue);
@@ -200,7 +199,7 @@
     }
     .b-waiting    { background:#f3f4f6; color:#6b7280; border-color:#e5e7eb; }
     .b-extracting { background:#f5f3ff; color:#7c3aed; border-color:#ddd6fe; }
-    .b-pushing    { background:#fffbeb; color:#b45309; border-color:#fde68a; }
+    .b-attaching  { background:#fff7ed; color:#c2410c; border-color:#fed7aa; }
     .b-done       { background:#ecfdf5; color:#059669; border-color:#a7f3d0; }
     .b-error      { background:#fef2f2; color:#dc2626; border-color:#fca5a5; }
 
@@ -236,6 +235,32 @@
     .ext-val { color: #111827; font-weight: 500; }
     .ext-empty { color: #9ca3af; font-style: italic; }
 
+    /* ATTACHMENT CONFIRMATION */
+    .attach-confirm {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #ea580c;
+      background: #fff7ed;
+      padding: 6px 11px;
+      border-radius: 7px;
+      border: 1px solid #fed7aa;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .attach-done {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #059669;
+      background: #f0fdf4;
+      padding: 6px 11px;
+      border-radius: 7px;
+      border: 1px solid #bbf7d0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
     .error-box {
       margin-top: 10px;
       font-size: 12px; color: #dc2626;
@@ -251,10 +276,6 @@
     }
     #empty .e-icon { font-size: 56px; margin-bottom: 14px; }
     #empty p { font-size: 15px; line-height: 1.7; }
-
-    /* SPINNER */
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .spin { display: inline-block; animation: spin 1s linear infinite; }
   </style>
 </head>
 <body>
@@ -263,8 +284,8 @@
   <div class="header-inner">
     <div class="header-logo">🏥</div>
     <div class="header-text">
-      <h1>Invoice Intelligence Hub</h1>
-      <p>AI-powered extraction for locum tenens &amp; temporary staff invoices</p>
+      <h1>PMOE Invoice Intelligence Hub</h1>
+      <p>PMOE extraction system for locum tenens and temporary staff invoices</p>
     </div>
     <div class="header-badge">📊 → Smartsheet</div>
   </div>
@@ -276,9 +297,9 @@
     <span>💡</span>
     <div>
       Upload any invoice — PDF or image — from <strong>any organization in any format</strong>.
-      AI will automatically extract the organization name, invoice number, invoice date,
-      amount due, and payment due date, then save each record to your
-      <strong>Smartsheet "Invoices"</strong> sheet instantly.
+      AI will automatically extract the organization name, invoice number, invoice date, amount due,
+      payment due date, and invoice owner, then save each record — with the
+      <strong>original file attached</strong> — to your <strong>Smartsheet "Invoices"</strong> sheet.
     </div>
   </div>
 
@@ -359,7 +380,7 @@
 
     valid.forEach((file, i) => {
       const id = `${Date.now()}-${Math.random()}`;
-      items.push({ id, file, status: 'waiting', extracted: null, error: null });
+      items.push({ id, file, status: 'waiting', extracted: null, error: null, attached: false });
       renderAll();
       setTimeout(() => processFile(id), i * 350);
     });
@@ -376,6 +397,9 @@
       const resp = await fetch('/api/process-invoice', { method: 'POST', body: fd });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || 'Server error');
+
+      const it = items.find(i => i.id === id);
+      if (it) it.attached = !!data.attachmentId;
 
       setStatus(id, 'done', data.extracted);
     } catch (err) {
@@ -418,7 +442,7 @@
     const badges = {
       waiting:    ['b-waiting',    '⏳', 'Waiting'],
       extracting: ['b-extracting', '🤖', 'AI Extracting…'],
-      pushing:    ['b-pushing',    '📤', 'Saving…'],
+      attaching:  ['b-attaching',  '📎', 'Attaching file…'],
       done:       ['b-done',       '✅', 'Saved to Smartsheet'],
       error:      ['b-error',      '❌', 'Error'],
     };
@@ -432,13 +456,20 @@
       <div class="extracted">
         <div class="ext-label">✦ Extracted Data</div>
         <div class="ext-grid">
-          ${ef('Organization', item.extracted.organizationName)}
-          ${ef('Invoice #',    item.extracted.invoiceNumber)}
-          ${ef('Invoice Date', item.extracted.dateOfInvoice)}
-          ${ef('Amount Due',   item.extracted.amountDue ? '$' + item.extracted.amountDue : '')}
-          ${ef('Payment Due',  item.extracted.paymentDueDate)}
+          ${ef('Organization',   item.extracted.organizationName)}
+          ${ef('Invoice #',      item.extracted.invoiceNumber)}
+          ${ef('Invoice Owner',  item.extracted.invoiceOwner)}
+          ${ef('Invoice Date',   item.extracted.dateOfInvoice)}
+          ${ef('Amount Due',     item.extracted.amountDue ? '$' + item.extracted.amountDue : '')}
+          ${ef('Payment Due',    item.extracted.paymentDueDate)}
         </div>
       </div>` : '';
+
+    const attachHtml = item.status === 'done'
+      ? `<div class="${item.attached ? 'attach-done' : 'attach-confirm'}">
+          ${item.attached ? '📎 Original file attached to Smartsheet row' : '⚠️ File saved but attachment may not have completed'}
+         </div>`
+      : '';
 
     const errorHtml = item.error
       ? `<div class="error-box">⚠️ ${item.error}</div>` : '';
@@ -461,6 +492,7 @@
         </div>
       </div>
       ${extractedHtml}
+      ${attachHtml}
       ${errorHtml}`;
     return div;
   }
@@ -475,7 +507,7 @@
   function retryItem(id) {
     const item = items.find(i => i.id === id);
     if (!item) return;
-    item.status = 'waiting'; item.error = null; item.extracted = null;
+    item.status = 'waiting'; item.error = null; item.extracted = null; item.attached = false;
     renderAll();
     processFile(id);
   }
