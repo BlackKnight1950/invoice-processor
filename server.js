@@ -74,7 +74,7 @@ app.post('/api/process-invoice', upload.single('invoice'), async (req, res) => {
 
   try {
     // ── Step 1: Extract with Claude AI (auto-retry on 529/overload) ──────────
-    console.log(`[${fileName}] Extracting with AI...`);
+    console.log(`[${fileName}] Cody Extracting...`);
 
     const message = await withRetry(
       () => anthropic.messages.create({
