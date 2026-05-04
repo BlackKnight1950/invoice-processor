@@ -1,7 +1,7 @@
 {
   "name": "pmoe-invoice-processor",
   "version": "1.0.0",
-  "description": "PMOE AI-powered invoice processor with Smartsheet integration",
+  "description": "PMOE-powered invoice processor with Smartsheet integration",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
